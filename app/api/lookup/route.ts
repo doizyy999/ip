@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { isValidDomain, isValidIP } from "@/lib/ipUtils";
-import { IP_API_BASE, IPINFO_BASE, CACHE_REVALIDATE_SECONDS } from "@/lib/constants";
+import { IP_API_BASE, IPINFO_BASE } from "@/lib/constants";
 import type { IPLookupResult } from "@/types/ip";
 
-export const revalidate = CACHE_REVALIDATE_SECONDS; // cache 1 jam
+export const revalidate = 3600; // cache 1 jam (harus literal, tidak boleh dari variabel import)
 
 async function fetchIpApi(target: string): Promise<IPLookupResult> {
   const key = process.env.IPAPI_KEY;
