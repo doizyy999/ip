@@ -1,53 +1,38 @@
 "use client";
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
 
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((m) => m.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((m) => m.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((m) => m.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import("react-leaflet").then((m) => m.Popup),
-  { ssr: false }
-);
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-export function MapView({
-  lat,
-  lng,
-  label,
-}: {
+// Fix default marker icon (issue umum Leaflet + bundler)
+const icon = L.divIcon({
+  className: "",
+  html: `<div style="width:14px;height:14px;border-radius:50%;background:#06b6d4;border:3px solid #8b5cf6;box-shadow:0 0 12px #06b6d4;"></div>`,
+  iconSize: [14, 14],
+  iconAnchor: [7, 7]
+});
+
+interface MapViewProps {
   lat: number;
-  lng: number;
+  lon: number;
   label?: string;
-}) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    import("leaflet/dist/leaflet.css");
-    // Fix icon default leaflet
-    import("leaflet").then((L) => {
-      // @ts-expect-error private field
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      });
-    });
-    setReady(true);
-  }, []);
-  if (!ready) return <div className="h-96 animate-pulse rounded-lg bg-zinc-900" />;
+}
+
+export default function MapView({ lat, lon, label }: MapViewProps) {
   return (
-    <MapContainer center={[lat, lng]} zoom={12} style={{ height: "400px", width: "100%", borderRadius: 12 }}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Marker position={[lat, lng]}>{label && <Popup>{label}</Popup>}</Marker>
+    <MapContainer
+      center={[lat, lon]}
+      zoom={10}
+      scrollWheelZoom={false}
+      style={{ height: 280, width: "100%" }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={[lat, lon]} icon={icon}>
+        <Popup>{label || `${lat.toFixed(4)}, ${lon.toFixed(4)}`}</Popup>
+      </Marker>
     </MapContainer>
   );
 }

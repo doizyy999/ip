@@ -1,25 +1,62 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-cyber-cyan: #06b6d4;
-  --color-cyber-purple: #8b5cf6;
-  --color-cyber-pink: #ec4899;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jbmono), ui-monospace, monospace;
+@layer base {
+  :root {
+    --background: 224 47% 5%;
+    --foreground: 210 40% 96%;
+    --card: 224 40% 8%;
+    --card-foreground: 210 40% 96%;
+    --popover: 224 40% 8%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 187 92% 50%;
+    --primary-foreground: 224 47% 5%;
+    --secondary: 262 83% 62%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 223 30% 14%;
+    --muted-foreground: 215 20% 60%;
+    --accent: 262 83% 62%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 96%;
+    --border: 223 25% 18%;
+    --input: 223 25% 18%;
+    --ring: 187 92% 50%;
+    --radius: 0.6rem;
+  }
 }
 
-:root {
-  color-scheme: dark;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
 }
 
-html,
-body {
-  background-color: #09090b;
-  color: #f4f4f5;
+/* Subtle grid background */
+.cyber-grid {
+  background-image:
+    linear-gradient(hsl(187 92% 50% / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(187 92% 50% / 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-::selection {
-  background: rgba(6, 182, 212, 0.35);
+/* Leaflet dark fix */
+.leaflet-container {
+  background: #0a0f1e;
+  border-radius: 0.6rem;
+  z-index: 0;
+}
+.leaflet-tile {
+  filter: brightness(0.7) invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.9);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: hsl(224 40% 8%);
+  color: hsl(210 40% 96%);
 }
 
 ::-webkit-scrollbar {
@@ -27,24 +64,9 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: hsl(224 47% 5%);
 }
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: hsl(223 25% 18%);
   border-radius: 4px;
-}
-
-.cyber-grid {
-  background-image:
-    linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-.glow-cyan {
-  text-shadow: 0 0 24px rgba(6, 182, 212, 0.6);
-}
-
-.leaflet-container {
-  background: #18181b;
 }
