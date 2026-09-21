@@ -1,139 +1,110 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, Share2, Monitor, Smartphone, Tablet, Bot } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { getHistory, clearHistory, type HistoryEntry } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import IPCard from "@/components/IPCard";
-import IPCardSkeleton from "@/components/IPCardSkeleton";
-import GPSLocator from "@/components/GPSLocator";
-import { parseUserAgent } from "@/lib/userAgent";
-import { copyToClipboard } from "@/lib/ipUtils";
-import type { IPLookupResult, MyIPResponse, ParsedUserAgent } from "@/types/ip";
-
-const DEVICE_ICONS = { Desktop: Monitor, Mobile: Smartphone, Tablet: Tablet, Bot: Bot, Unknown: Monitor };
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Sparkles, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
-  const [myip, setMyip] = useState<MyIPResponse | null>(null);
-  const [lookup, setLookup] = useState<IPLookupResult | null>(null);
-  const [ua, setUa] = useState<ParsedUserAgent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [insight, setInsight] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async () => {
+  useEffect(() => setHistory(getHistory()), []);
+
+  async function aiInsight() {
     setLoading(true);
     try {
-      const res = await fetch("/api/myip", { cache: "no-store" });
-      const data: MyIPResponse = await res.json();
-      setMyip(data);
-      setUa(parseUserAgent(data.userAgent));
-
-      if (data.ip && data.ip !== "unknown") {
-        const lres = await fetch(`/api/lookup?ip=${encodeURIComponent(data.ip)}`);
-        if (lres.ok) setLookup(await lres.json());
-        else setLookup(null);
-      } else {
-        setLookup(null);
-      }
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "profile", data: history.slice(0, 20) }),
+      });
+      const json = await res.json();
+      if (json.success) setInsight(json.data);
+      else toast.error(json.error || "AI gagal");
     } catch {
-      toast.error("Gagal mendeteksi IP kamu.");
+      toast.error("Gagal menghubungi AI");
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  async function handleShare() {
-    if (!lookup) return;
-    const text = `IPIntel — IP saya: ${lookup.query} | ${lookup.city || "?"}, ${lookup.country || "?"} | ISP: ${lookup.isp || "?"}`;
-    const ok = await copyToClipboard(text);
-    if (ok) toast.success("Ringkasan disalin — tinggal paste ke mana aja.");
-    else toast.error("Gagal menyalin.");
   }
 
-  const DeviceIcon = ua ? DEVICE_ICONS[ua.device] : Monitor;
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">My IP Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Deteksi otomatis IP publik & info browser kamu.
-          </p>
-        </div>
+    <div className="space-y-6 py-10">
+      <div className="flex items-center justify-between">
+        <h1 className="font-mono text-2xl font-bold tracking-widest text-cyber-cyan">
+          DASHBOARD
+        </h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={load} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={aiInsight}
+            disabled={loading || history.length === 0}
+          >
+            <Sparkles className="mr-1 h-4 w-4 text-cyber-purple" />
+            {loading ? "Menganalisis..." : "AI Insight"}
           </Button>
-          <Button variant="secondary" onClick={handleShare} disabled={!lookup}>
-            <Share2 className="h-4 w-4" />
-            Share Hasil
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              clearHistory();
+              setHistory([]);
+              toast.success("History dihapus");
+            }}
+          >
+            <Trash2 className="mr-1 h-4 w-4" /> Clear
           </Button>
         </div>
       </div>
 
-      {loading ? (
-        <IPCardSkeleton />
+      {insight && (
+        <Card className="border-cyber-purple/40 bg-zinc-900/60">
+          <CardHeader>
+            <CardTitle className="text-sm text-cyber-purple">AI Insight</CardTitle>
+          </CardHeader>
+          <CardContent className="whitespace-pre-wrap text-sm text-zinc-300">
+            {insight}
+          </CardContent>
+        </Card>
+      )}
+
+      {history.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          Belum ada history. Lakukan scan dari{" "}
+          <Link href="/" className="text-cyber-cyan underline">
+            homepage
+          </Link>
+          .
+        </p>
       ) : (
-        <>
-          {myip && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <DeviceIcon className="h-4 w-4 text-primary" />
-                  Perangkat & Browser
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    { label: "IP Terdeteksi", value: myip.ip, mono: true },
-                    { label: "Browser", value: ua ? `${ua.browser} ${ua.browserVersion}` : "-" },
-                    { label: "OS", value: ua?.os || "-" },
-                    { label: "Device", value: ua?.device || "-" }
-                  ].map((f) => (
-                    <div key={f.label} className="rounded-md border border-border/60 bg-muted/30 px-3 py-2">
-                      <div className="text-xs text-muted-foreground">{f.label}</div>
-                      <div className={`truncate text-sm ${f.mono ? "font-mono" : ""}`}>{f.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
-                  <div className="text-xs text-muted-foreground">User Agent (mentah)</div>
-                  <div className="break-all font-mono text-xs">{myip.userAgent || "N/A"}</div>
-                </div>
-                {Object.keys(myip.headers).length > 0 && (
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                      Lihat HTTP headers ({Object.keys(myip.headers).length})
-                    </summary>
-                    <pre className="mt-2 overflow-x-auto rounded-md border border-border/60 bg-muted/30 p-3 font-mono text-xs">
-                      {JSON.stringify(myip.headers, null, 2)}
-                    </pre>
-                  </details>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {lookup ? (
-            <IPCard data={lookup} />
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Geolokasi tidak tersedia (mungkin kamu di localhost / private IP).
-                Deploy ke Vercel untuk hasil nyata.
-              </CardContent>
-            </Card>
-          )}
-
-          <GPSLocator />
-        </>
+        <div className="space-y-2">
+          {history.map((h) => (
+            <div
+              key={h.id}
+              className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Badge variant="cyan">{h.type}</Badge>
+                <span className="font-mono text-sm text-zinc-200">{h.query}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-zinc-500">
+                  {new Date(h.createdAt).toLocaleString("id-ID")}
+                </span>
+                <Link href={`/result/${h.id}`}>
+                  <ExternalLink className="h-4 w-4 text-cyber-cyan" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
