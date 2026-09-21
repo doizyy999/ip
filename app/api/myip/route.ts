@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     cf?.trim() ||
     realIp?.trim() ||
     xff?.split(",")[0]?.trim() ||
-    req.ip ||
     "unknown";
 
   const headers: Record<string, string> = {};
