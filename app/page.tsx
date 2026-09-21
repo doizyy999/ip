@@ -1,92 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { SearchBar } from "@/components/SearchBar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { GitCompareArrows, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import LookupForm from "@/components/LookupForm";
-import IPCard from "@/components/IPCard";
-import IPCardSkeleton from "@/components/IPCardSkeleton";
-import HistoryList from "@/components/HistoryList";
-import ProviderCompareTable from "@/components/ProviderCompareTable";
-import type { IPLookupResult, ProvidersResponse } from "@/types/ip";
+import Link from "next/link";
+import { getHistory, type HistoryEntry } from "@/lib/store";
+import {
+  AtSign,
+  Mail,
+  Phone,
+  Globe,
+  Image as ImageIcon,
+  Building2,
+  Share2,
+  Network,
+  Clock,
+  Bot,
+} from "lucide-react";
+
+const MODULES = [
+  { icon: AtSign, name: "Username Scanner", desc: "150+ platform, parallel fetch, deteksi status HTTP" },
+  { icon: Mail, name: "Email Intelligence", desc: "MX record, disposable check, Gravatar, GitHub commits" },
+  { icon: Phone, name: "Phone Intelligence", desc: "E.164 parse, negara, tipe, link WhatsApp/Telegram" },
+  { icon: Globe, name: "Domain Inspector", desc: "WHOIS, DNS, subdomain crt.sh, SSL, tech stack" },
+  { icon: ImageIcon, name: "Image Metadata", desc: "EXIF, GPS ke peta, reverse image search" },
+  { icon: Building2, name: "Public Records", desc: "AHU, OSS, putusan MA, berita publik" },
+  { icon: Share2, name: "Social Scanner", desc: "GitHub, Reddit, Dev.to, Medium via API resmi" },
+  { icon: Network, name: "Relationship Graph", desc: "Force-directed graph interaktif" },
+  { icon: Clock, name: "Timeline Builder", desc: "Gabungan semua aktivitas publik + chart" },
+  { icon: Bot, name: "AI Assistant", desc: "Groq LLM: analisis, red flag, laporan otomatis" },
+];
 
 export default function HomePage() {
-  const [result, setResult] = useState<IPLookupResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [providers, setProviders] = useState<ProvidersResponse | null>(null);
-  const [providersLoading, setProvidersLoading] = useState(false);
-
-  async function handleCompareProviders() {
-    if (!result) return;
-    setProvidersLoading(true);
-    setProviders(null);
-    try {
-      const res = await fetch(`/api/providers?ip=${encodeURIComponent(result.query)}`);
-      const body = await res.json();
-      if (!res.ok) {
-        toast.error(body.error || "Gagal membandingkan provider.");
-        return;
-      }
-      setProviders(body as ProvidersResponse);
-    } catch {
-      toast.error("Network error — cek koneksi kamu.");
-    } finally {
-      setProvidersLoading(false);
-    }
-  }
-
-  function handleResult(data: IPLookupResult) {
-    setResult(data);
-    setProviders(null);
-  }
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  useEffect(() => setHistory(getHistory().slice(0, 5)), []);
 
   return (
-    <div className="space-y-8">
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="space-y-4 pt-6 text-center"
-      >
-        <h1 className="bg-cyber-gradient bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
-          IP Intelligence Lookup
-        </h1>
-        <p className="mx-auto max-w-xl text-muted-foreground">
-          Masukkan IP address atau domain untuk melihat geolokasi, ISP, ASN, dan deteksi
-          VPN / Proxy / Hosting. Tool edukasi — bukan untuk tracking orang.
-        </p>
-      </motion.section>
+    <div className="cyber-grid">
+      <section className="flex flex-col items-center gap-6 py-16 text-center">
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-mono text-5xl font-bold tracking-widest text-cyber-cyan glow-cyan md:text-7xl"
+        >
+          TRACE
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="max-w-2xl text-zinc-400"
+        >
+          Public information aggregator &amp; digital footprint analyzer. Satu input —
+          username, email, phone, atau domain — kumpulkan semua jejak digital publik.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="w-full max-w-2xl"
+        >
+          <SearchBar />
+        </motion.div>
+      </section>
 
-      <div className="mx-auto max-w-2xl">
-        <LookupForm onResult={handleResult} onLoading={setLoading} />
-      </div>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {MODULES.map((m, i) => (
+          <motion.div
+            key={m.name}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.04 }}
+          >
+            <Card className="h-full border-zinc-800 bg-zinc-900/60 transition hover:border-cyber-cyan/50">
+              <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                <m.icon className="h-5 w-5 text-cyber-purple" />
+                <CardTitle className="text-sm text-zinc-100">{m.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-zinc-500">{m.desc}</CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </section>
 
-      <div className="mx-auto max-w-3xl space-y-6">
-        {loading && <IPCardSkeleton />}
-        {!loading && result && (
-          <>
-            <IPCard data={result} />
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" onClick={handleCompareProviders} disabled={providersLoading}>
-                {providersLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <GitCompareArrows className="h-4 w-4" />
-                )}
-                Bandingkan Semua Provider
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Cek konsistensi lokasi antar sumber data — kalau beda, itu indikasi akurasi
-                rendah di area ini.
-              </p>
-            </div>
-            {providers && <ProviderCompareTable data={providers} />}
-          </>
-        )}
-        <HistoryList onSelect={handleResult} />
-      </div>
+      {history.length > 0 && (
+        <section className="mt-12">
+          <h2 className="mb-3 font-mono text-sm tracking-widest text-zinc-500">
+            RECENT SCANS
+          </h2>
+          <div className="space-y-2">
+            {history.map((h) => (
+              <Link
+                key={h.id}
+                href={`/result/${h.id}`}
+                className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-2.5 text-sm transition hover:border-cyber-cyan/50"
+              >
+                <span className="font-mono text-cyber-cyan">{h.query}</span>
+                <span className="text-xs text-zinc-500">
+                  {h.type} · {new Date(h.createdAt).toLocaleString("id-ID")}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
