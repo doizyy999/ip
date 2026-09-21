@@ -8,6 +8,10 @@ import type { DomainIntel } from "@/types";
 
 const schema = z.object({ query: z.string().min(3).max(253) });
 
+function firstValue(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 function sslInfo(host: string): Promise<DomainIntel["ssl"]> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(null), 6000);
@@ -17,8 +21,7 @@ function sslInfo(host: string): Promise<DomainIntel["ssl"]> {
         const cert = socket.getPeerCertificate();
         socket.end();
         if (!cert || !cert.issuer) return resolve(null);
-        const org = cert.issuer.O;
-        const issuer = (Array.isArray(org) ? org[0] : org) ?? cert.issuer.CN;
+        const issuer = firstValue(cert.issuer.O) ?? firstValue(cert.issuer.CN);
         resolve({
           issuer,
           notBefore: cert.valid_from,
