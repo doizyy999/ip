@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import IPCard from "@/components/IPCard";
 import IPCardSkeleton from "@/components/IPCardSkeleton";
+import GPSLocator from "@/components/GPSLocator";
 import { parseUserAgent } from "@/lib/userAgent";
 import { copyToClipboard } from "@/lib/ipUtils";
 import type { IPLookupResult, MyIPResponse, ParsedUserAgent } from "@/types/ip";
@@ -130,6 +131,8 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
+
+          <GPSLocator />
         </>
       )}
     </div>

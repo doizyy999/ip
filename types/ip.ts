@@ -52,3 +52,30 @@ export interface HistoryItem {
   result: IPLookupResult;
   timestamp: number;
 }
+
+export interface ProviderResult {
+  name: "ip-api" | "ipinfo";
+  result: IPLookupResult | null;
+  error: string | null;
+}
+
+export interface ProvidersResponse {
+  query: string;
+  providers: ProviderResult[];
+}
+
+export interface GeoAddress {
+  displayName?: string;
+  road?: string;
+  houseNumber?: string;
+  neighbourhood?: string;
+  village?: string;
+  suburb?: string;
+  cityDistrict?: string; // kecamatan
+  city?: string;
+  county?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  countryCode?: string;
+}
